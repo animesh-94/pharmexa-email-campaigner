@@ -75,6 +75,7 @@ services:
   - type: redis
     name: emailcamp-redis
     plan: free
+    ipAllowList: []
 
 databases:
   - name: emailcamp-db
