@@ -1,0 +1,83 @@
+services:
+  - type: web
+    name: emailcamp-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://emailcamp-web.onrender.com
+
+  - type: web
+    name: emailcamp-web
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: emailcamp-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: emailcamp-redis
+          property: connectionString
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: FROM_EMAIL
+        sync: false
+      - key: APP_DOMAIN
+        value: https://emailcamp-web.onrender.com
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: worker
+    name: emailcamp-worker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.worker.celery_app worker --loglevel=info -c 2
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: emailcamp-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: emailcamp-redis
+          property: connectionString
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: FROM_EMAIL
+        sync: false
+      - key: APP_DOMAIN
+        value: https://emailcamp-web.onrender.com
+      - key: SECRET_KEY
+        sync: false
+
+  - type: redis
+    name: emailcamp-redis
+    plan: free
+
+databases:
+  - name: emailcamp-db
+    databaseName: emailcamp
+    user: emailcamp_user
+    plan: free
